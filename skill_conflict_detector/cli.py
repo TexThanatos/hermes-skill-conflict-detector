@@ -140,9 +140,14 @@ def main():
         help="Show skills related to a specific skill (from cache)",
     )
     parser.add_argument(
+        "--preflight",
+        metavar="SKILL_NAME",
+        help="Quick preflight check on a single skill before loading. Exit 0 if clean, 1 if issues.",
+    )
+    parser.add_argument(
         "--version",
         action="version",
-        version="skill-conflicts 0.2.0",
+        version="skill-conflicts 0.3.0",
     )
 
     args = parser.parse_args()
@@ -178,6 +183,36 @@ def main():
         for rtype, names in rel.items():
             if names:
                 print(f"  {rtype}: {', '.join(names)}")
+        return
+
+    if args.preflight:
+        target = args.preflight.strip().lower()
+        # Find the skill (fuzzy match)
+        skills_dir = os.path.abspath(args.skills_dir)
+        if not os.path.isdir(skills_dir):
+            print(f"PREFLIGHT FAIL: skills directory not found: {skills_dir}")
+            sys.exit(1)
+        all_skills = scan_skills_directory(skills_dir)
+        matched = [s for s in all_skills if s["name"].lower() == target]
+        if not matched:
+            print(f"PREFLIGHT FAIL: skill '{args.preflight}' not found")
+            sys.exit(1)
+        skill = matched[0]
+        # Check cache: is this skill stale?
+        changed, _ = find_changed_skills([skill])
+        if changed:
+            print(f"PREFLIGHT WARN: '{args.preflight}' has un-cached changes — run full scan first")
+            sys.exit(1)
+        # Get related skills from cache
+        rel = get_related_skills(args.preflight)
+        issues_found = False
+        for rtype, names in rel.items():
+            if rtype in ("overlaps", "supersedes") and names:
+                issues_found = True
+                print(f"PREFLIGHT ISSUE: '{args.preflight}' {rtype}: {', '.join(names)}")
+        if issues_found:
+            sys.exit(1)
+        print(f"PREFLIGHT OK: '{args.preflight}' is clean")
         return
 
     # Parse severity filter
