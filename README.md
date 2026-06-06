@@ -3,6 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
+**[中文版](README.zh.md) | English**
+
 **Detect conflicts, broken relationships, and maintenance issues between [Hermes Agent](https://hermes-agent.nousresearch.com/) skills.**
 
 As your skill collection grows (151+ and counting), skills inevitably overlap in domain, trigger keywords, and purpose. This tool helps you keep them organized by surfacing:
