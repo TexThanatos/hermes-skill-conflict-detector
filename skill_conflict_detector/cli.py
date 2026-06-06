@@ -45,8 +45,9 @@ def main():
   skill-conflicts ~/.hermes/skills --cache          # incremental scan
   skill-conflicts ~/.hermes/skills --cache --full    # force full rescan
   skill-conflicts ~/.hermes/skills --deep            # body content analysis
-  skill-conflicts ~/.hermes/skills --graph           # Mermaid relationship chart
-  skill-conflicts ~/.hermes/skills --graph-html      # interactive vis.js graph
+  skill-conflicts ~/.hermes/skills --graph           # shallow (default)
+  skill-conflicts ~/.hermes/skills --graph --graph-for xianyu-publish
+  skill-conflicts ~/.hermes/skills --graph-html --recursive  # full expansion
   skill-conflicts ~/.hermes/skills --cache-stats     # show cache status
   skill-conflicts ~/.hermes/skills --cache-clear     # clear all cached data
         """,
@@ -115,7 +116,13 @@ def main():
     parser.add_argument(
         "--shallow",
         action="store_true",
-        help="With --graph-for or --cache: only scan/display direct (depth-1) connections, no recursion",
+        default=True,
+        help="(default) Only scan/display direct (depth-1) connections, no recursion",
+    )
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        help="Expand scan/display to all connected skills (disables shallow default)",
     )
     parser.add_argument(
         "--cache-stats",
@@ -266,7 +273,7 @@ def main():
         print("## Skill Relationship Graph")
         print()
         if args.graph_for:
-            connected = _collect_connected_nodes(triples, args.graph_for)
+            connected = _collect_connected_nodes(triples, args.graph_for, max_depth=None if args.recursive else 1)
             filtered = [(a, r, b) for a, r, b in triples if a in connected and b in connected]
             print(generate_mermaid_with_status(filtered, skills))
         else:
@@ -276,7 +283,7 @@ def main():
     # Generate graph (interactive HTML)
     if args.graph_html:
         triples = build_relation_triples(skills)
-        max_depth = 1 if args.shallow else None
+        max_depth = None if args.recursive else 1
         html = generate_interactive_html(triples, skills, focus_skill=args.graph_for, max_depth=max_depth)
         graph_path = os.path.join(skills_dir, "..", "skill_relationship_graph.html")
         with open(graph_path, "w", encoding="utf-8") as f:
