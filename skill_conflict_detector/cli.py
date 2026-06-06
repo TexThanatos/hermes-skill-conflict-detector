@@ -32,6 +32,7 @@ from .graph import (
     build_relation_triples,
     generate_mermaid_with_status,
     generate_interactive_html,
+    _collect_connected_nodes,
 )
 
 
@@ -105,6 +106,11 @@ def main():
         "--graph-html",
         action="store_true",
         help="Generate interactive vis.js relationship graph HTML",
+    )
+    parser.add_argument(
+        "--graph-for",
+        metavar="SKILL_NAME",
+        help="With --graph or --graph-html: focus on a specific skill and its connections",
     )
     parser.add_argument(
         "--cache-stats",
@@ -254,17 +260,24 @@ def main():
         print()
         print("## Skill Relationship Graph")
         print()
-        print(generate_mermaid_with_status(triples, skills))
+        if args.graph_for:
+            connected = _collect_connected_nodes(triples, args.graph_for)
+            filtered = [(a, r, b) for a, r, b in triples if a in connected and b in connected]
+            print(generate_mermaid_with_status(filtered, skills))
+        else:
+            print(generate_mermaid_with_status(triples, skills))
         print()
 
     # Generate graph (interactive HTML)
     if args.graph_html:
         triples = build_relation_triples(skills)
-        html = generate_interactive_html(triples, skills)
+        html = generate_interactive_html(triples, skills, focus_skill=args.graph_for)
         graph_path = os.path.join(skills_dir, "..", "skill_relationship_graph.html")
         with open(graph_path, "w", encoding="utf-8") as f:
             f.write(html)
         print(f"\nInteractive graph written to: {graph_path}", file=sys.stderr)
+        if args.graph_for:
+            print(f"  (focused on: {args.graph_for})", file=sys.stderr)
 
     # Generate report
     if args.format == "json":
