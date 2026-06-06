@@ -113,6 +113,11 @@ def main():
         help="With --graph or --graph-html: focus on a specific skill and its connections",
     )
     parser.add_argument(
+        "--shallow",
+        action="store_true",
+        help="With --graph-for or --cache: only scan/display direct (depth-1) connections, no recursion",
+    )
+    parser.add_argument(
         "--cache-stats",
         action="store_true",
         help="Show cache statistics and exit",
@@ -271,7 +276,8 @@ def main():
     # Generate graph (interactive HTML)
     if args.graph_html:
         triples = build_relation_triples(skills)
-        html = generate_interactive_html(triples, skills, focus_skill=args.graph_for)
+        max_depth = 1 if args.shallow else None
+        html = generate_interactive_html(triples, skills, focus_skill=args.graph_for, max_depth=max_depth)
         graph_path = os.path.join(skills_dir, "..", "skill_relationship_graph.html")
         with open(graph_path, "w", encoding="utf-8") as f:
             f.write(html)

@@ -46,8 +46,11 @@ def group_triples(triples):
     return dict(groups)
 
 
-def _collect_connected_nodes(triples, focus_skill=None):
-    """Return set of nodes that have edges. Optionally BFS from focus_skill."""
+def _collect_connected_nodes(triples, focus_skill=None, max_depth=None):
+    """Return set of nodes that have edges. Optionally BFS from focus_skill.
+
+    If max_depth is set (e.g. 1), only include directly connected nodes.
+    """
     all_nodes, adj = set(), defaultdict(set)
     for a, r, b in triples:
         all_nodes.add(a); all_nodes.add(b)
@@ -56,13 +59,15 @@ def _collect_connected_nodes(triples, focus_skill=None):
         return all_nodes
     if focus_skill not in all_nodes:
         return {focus_skill}
-    visited, queue = {focus_skill}, [focus_skill]
+    visited, queue = {focus_skill}, [(focus_skill, 0)]
     while queue:
-        n = queue.pop(0)
+        n, d = queue.pop(0)
+        if max_depth is not None and d >= max_depth:
+            continue
         for nb in adj.get(n, set()):
             if nb not in visited:
                 visited.add(nb)
-                queue.append(nb)
+                queue.append((nb, d + 1))
     return visited
 
 
@@ -94,14 +99,15 @@ def generate_mermaid_with_status(triples, skills=None):
 
 # ── Interactive vis.js HTML ─────────────────────────────────────────────
 
-def generate_interactive_html(triples, skills, focus_skill=None):
+def generate_interactive_html(triples, skills, focus_skill=None, max_depth=None):
     """Interactive HTML with vis.js. Only shows nodes with relationships.
 
     If focus_skill is set, only show that skill's connected subgraph.
+    max_depth limits BFS depth (1 = direct connections only).
     """
     groups = group_triples(triples)
     name_map = {sk["name"]: sk for sk in skills}
-    connected = _collect_connected_nodes(triples, focus_skill)
+    connected = _collect_connected_nodes(triples, focus_skill, max_depth=max_depth)
     if not connected:
         return "<p>No relationships found.</p>"
 
