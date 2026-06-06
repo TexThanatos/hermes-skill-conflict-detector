@@ -138,3 +138,11 @@ python -m pytest tests/
 ## License
 
 MIT
+
+## Donate
+
+If this tool saved you time and you'd like to buy the author a coffee:
+
+![Donate QR Code](assets/qrcode_donate.jpg)
+
+Your support keeps the skills conflict-free!
