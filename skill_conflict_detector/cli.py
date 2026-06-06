@@ -14,6 +14,7 @@ from .analyzer import (
     detect_trigger_overlap,
     detect_missing_metadata,
     detect_similar_descriptions,
+    detect_body_conflicts_deep,
 )
 from .reporter import format_json_report, format_markdown_report, build_stats
 
@@ -29,6 +30,7 @@ Examples:
   skill-conflicts ~/.hermes/skills --output report.md
   skill-conflicts ~/.hermes/skills --severity ERROR,WARNING
   skill-conflicts ~/.hermes/skills --skip supersedes,metadata
+  skill-conflicts ~/.hermes/skills --deep
         """,
     )
 
@@ -63,6 +65,11 @@ Examples:
         help="Show verbose logging",
     )
     parser.add_argument(
+        "--deep",
+        action="store_true",
+        help="Analyze skill body content to detect tool chain and method conflicts",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version=f"skill-conflicts 0.1.0",
@@ -93,7 +100,11 @@ Examples:
         "descriptions": ("Similar descriptions", detect_similar_descriptions),
     }
 
-    skip_names = {"naming", "supersedes", "orphans", "triggers", "metadata", "descriptions"}
+    # Deep (body content) check — only runs with --deep
+    if args.deep:
+        check_map["body"] = ("Body content method conflicts", detect_body_conflicts_deep)
+
+    skip_names = {"naming", "supersedes", "orphans", "triggers", "metadata", "descriptions", "body"}
     unknown_skips = skip_checks - skip_names
     if unknown_skips:
         print(f"Warning: Unknown check types to skip: {unknown_skips}", file=sys.stderr)
